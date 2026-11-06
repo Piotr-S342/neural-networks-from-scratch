@@ -1,4 +1,4 @@
-# Neural Networks From Scratch
+# XOR Neural Network
 
 A simple neural network built from scratch in Python using NumPy to learn the XOR logic gate.
 
