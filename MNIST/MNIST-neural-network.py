@@ -4,10 +4,10 @@ import os
 import matplotlib.pyplot as plt
 
 data = {
-    "training_images": "MNIST/MNIST-data/train-images.idx3-ubyte",
-    "training_labels": "MNIST/MNIST-data/train-labels.idx1-ubyte",
-    "testing_images": "MNIST/MNIST-data/t10k-images.idx3-ubyte",
-    "testing_labels": "MNIST/MNIST-data/t10k-labels.idx1-ubyte"
+    "training_images": "MNIST-data/train-images.idx3-ubyte",
+    "training_labels": "MNIST-data/train-labels.idx1-ubyte",
+    "testing_images": "MNIST-data/t10k-images.idx3-ubyte",
+    "testing_labels": "MNIST-data/t10k-labels.idx1-ubyte"
 }
 
 train_images = open(data["training_images"], mode="rb")
@@ -22,24 +22,25 @@ mnist_dataset["train_labels"] = np.frombuffer(train_labels.read(),np.uint8,offse
 mnist_dataset["test_images"] = np.frombuffer(test_images.read(),np.uint8,offset = 16).reshape(-1,28 * 28)
 mnist_dataset["test_labels"] = np.frombuffer(test_labels.read(),np.uint8,offset = 8)
 
-x = np.array(mnist_dataset["train_images"])
-y = np.array(mnist_dataset["train_labels"])
-x = x.astype('float32') / 255
-y = np.eye(10)[y]
+x_train = np.array(mnist_dataset["train_images"])
+y_train = np.array(mnist_dataset["train_labels"])
+x_train = x_train.astype('float32') / 255
+y_train = np.eye(10)[y_train]
 
 x_test = np.array(mnist_dataset["test_images"])
 y_test = np.array(mnist_dataset["test_labels"])
 x_test = x_test.astype('float32') / 255
 y_test = np.eye(10)[y_test]
 
-weights = np.random.rand(784,64) * np.sqrt(2 / 784 + 64 )
+weights = np.random.randn(784,64) * np.sqrt(2 / (784 + 64) )
 
 bias = np.zeros(64,)
 
-out_weights = np.random.rand(64,10) * np.sqrt(2 / 74 )
+out_weights = np.random.randn(64,10) * np.sqrt(2 / 74 )
 out_bias = np.zeros(10,)
 
 learning_rate = 0.1
+batch_size = 64
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
@@ -73,12 +74,21 @@ def gradient_descent(weight_grad, bias_grad, hiden_weight_grad, hiden_bias_grad,
     return out_weights, out_bias,bias,weights
 
 for epoch in range(1000):
-    hiden_out, out, L = forward_propagation()
-    weight_grad, bias_grad, hiden_weight_grad, hiden_bias_grad = backward_propagation(hiden_out, out, L)
-    out_weights, out_bias,bias,weights = gradient_descent(weight_grad, bias_grad, hiden_weight_grad, hiden_bias_grad,out_weights,out_bias,weights,bias)
-
+    total_loss = 0
+    indeces = np.random.permutation(len(x_train))
+    x_train = x_train[indeces]
+    y_train = y_train[indeces]
+    for start in range(0,len(x_train),batch_size):
+        end = start + batch_size
+        x = x_train[start:end]
+        y = y_train[start:end]
+        hiden_out, out, L = forward_propagation()
+        weight_grad, bias_grad, hiden_weight_grad, hiden_bias_grad = backward_propagation(hiden_out, out, L)
+        out_weights, out_bias,bias,weights = gradient_descent(weight_grad, bias_grad, hiden_weight_grad, hiden_bias_grad,out_weights,out_bias,weights,bias)
+        total_loss += L * len(x)
+    average_loss = total_loss / len(x_train)
     if epoch % 10 == 0:
-        print(f"Epoch {epoch:,}: Loss {L:.6f}")
+        print(f"Epoch {epoch:,}: Loss {average_loss:.6f}")
 
 
 hiden_out, out, L = forward_propagation()
