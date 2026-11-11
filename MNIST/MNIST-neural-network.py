@@ -45,22 +45,33 @@ batch_size = 64
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
-def forward_propagation():
-    hiden_out = sigmoid(x @ weights + bias)
-    out = sigmoid(hiden_out @ out_weights + out_bias)
+def relu(x):
+    return np.maximum(0, x)
+def relu_dx(x):
+    return (x>0).astype(float)
 
-    L = np.mean((out - y) ** 2)
+def softmax(x):
+    return np.exp(x) / np.sum(np.exp(x), axis = 1, keepdims = True)
+
+def cross_entropy(prediction,target):
+    return -np.mean(np.sum(target * np.log(prediction + 1e-12),axis = 1))
+
+def forward_propagation():
+    hiden_out = relu(x @ weights + bias)
+    out = softmax(hiden_out @ out_weights + out_bias)
+
+    L = cross_entropy(out, y)
     return hiden_out, out, L
 
 def backward_propagation(hiden_out, out, L):
-    pred_grad = (2/(x.shape[0] * 10)) *(out - y)      #diferenciating to find how changing prediction affects the loss (if negative pred needs to increase)
-    out_grad = pred_grad * (out * (1 - out))   #same thing as ^ but before the sigmoid (uses derivative of sigmoid and the calculation before)
+          #diferenciating to find how changing prediction affects the loss (if negative pred needs to increase)
+    out_grad = (out - y) / x.shape[0]  #same thing as ^ but before the sigmoid ((relu now)) (uses derivative of sigmoid and the calculation before)
 
     weight_grad = hiden_out.T @ out_grad       #finds the effect of weight on loss using chain rule and the calculation ^
     bias_grad = np.sum(out_grad, axis = 0)               #finds effect of bias on loss
 
     hiden_activation_grad = out_grad @ out_weights.T
-    hiden_out_grad = hiden_activation_grad * (hiden_out * (1 - hiden_out))
+    hiden_out_grad = hiden_activation_grad * relu_dx(hiden_out)
     hiden_weight_grad = x.T @ hiden_out_grad
     hiden_bias_grad = np.sum(hiden_out_grad, axis = 0)
 
